@@ -1,46 +1,68 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.contrib.auth.models import User
+from rest_framework.permissions import AllowAny
 from .models import Exercise, ExerciseResult, Conversation, Message
 from .serializers import ExerciseSerializer, ExerciseResultSerializer, ConversationSerializer, MessageSerializer
 
+
+# ============================
+# 📘 EJERCICIOS (CRUD completo)
+# ============================
 class ExerciseViewSet(viewsets.ModelViewSet):
     queryset = Exercise.objects.all().order_by('-created_at')
     serializer_class = ExerciseSerializer
-    permission_classes = [IsAuthenticated]  # ajustar según rol en frontend
+    permission_classes = [AllowAny]
 
-    def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
 
+# ==========================================
+# 🧾 RESULTADOS DE LOS EJERCICIOS (CRUD)
+# ==========================================
 class ExerciseResultViewSet(viewsets.ModelViewSet):
     queryset = ExerciseResult.objects.all().order_by('-submitted_at')
     serializer_class = ExerciseResultSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
 
+    # 🔹 Eliminamos el filtro antiguo por "student"
     def get_queryset(self):
-        user = self.request.user
-        if user.is_staff:
-            return super().get_queryset()
-        return ExerciseResult.objects.filter(student=user)
+        return ExerciseResult.objects.all()
 
+
+# ==================================
+# 💬 CHATBOT SIMPLIFICADO
+# ==================================
 @api_view(['POST'])
-@permission_classes([AllowAny])  # cambiar a IsAuthenticated si usas auth
+@permission_classes([AllowAny])
 def chat_interact(request):
     data = request.data
-    user_id = data.get('user_id')
-    text = data.get('message', '')
-    if not user_id:
-        return Response({'detail': 'user_id required'}, status=status.HTTP_400_BAD_REQUEST)
-    conv, _ = Conversation.objects.get_or_create(user_id=user_id)
-    # lógica simple de matching
-    reply = "No entendí, intenta preguntar sobre ejercicios."
+    text = data.get('message', '').strip()
+    user_id = data.get('user_id', 'anon')
+
+    if not text:
+        return Response({'detail': 'message required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Buscar o crear conversación del "usuario"
+    conv, _ = Conversation.objects.get_or_create(user_identifier=str(user_id))
+
+    # Lógica simple del chatbot
     t = text.lower()
+    reply = "No entendí, intenta preguntar sobre ejercicios."
+
     if 'hola' in t:
         reply = "¡Hola! ¿Qué tema quieres practicar?"
     elif 'ejercicio' in t:
-        reply = "Puedes ir a Ejercicios para comenzar un reto."
-    msg = Message.objects.create(conversation=conv, sender=f"user_{user_id}", text=text, bot_response=reply)
+        reply = "Puedes ir a la sección de Ejercicios para comenzar un reto."
+    elif 'gracias' in t:
+        reply = "¡De nada! Estoy aquí para ayudarte."
+    elif 'resultado' in t:
+        reply = "Puedes ver tus resultados en la sección de 'Resultados'."
+
+    msg = Message.objects.create(
+        conversation=conv,
+        sender=f"user_{user_id}",
+        text=text,
+        bot_response=reply
+    )
+
     serializer = MessageSerializer(msg)
     return Response({'reply': reply, 'message': serializer.data})

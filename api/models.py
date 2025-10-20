@@ -26,22 +26,24 @@ class Exercise(models.Model):
     def __str__(self):
         return self.title
 
+from django.db import models
+
 class ExerciseResult(models.Model):
-    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='results')
-    exercise = models.ForeignKey(Exercise, on_delete=models.CASCADE)
+    student_name = models.CharField(max_length=100)
+    exercise_title = models.CharField(max_length=100)
     score = models.FloatField()
     submitted_at = models.DateTimeField(auto_now_add=True)
     details = models.JSONField(blank=True, null=True)
 
     def __str__(self):
-        return f"{self.student.username} - {self.exercise.title} - {self.score}"
+        return f"{self.student_name} - {self.exercise_title} - {self.score}"
 
 class Conversation(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conversations')
+    user_identifier = models.CharField(max_length=100, blank=True, null=True)
     started_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Conversation {self.id} - {self.user.username}"
+        return f"Conversation {self.id} - {self.user_identifier or 'Anon'}"
 
 class Message(models.Model):
     conversation = models.ForeignKey(Conversation, on_delete=models.CASCADE, related_name='messages')
