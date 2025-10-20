@@ -1,9 +1,38 @@
-venv/
+# 🐍 Archivos de Python
 __pycache__/
-*.pyc
-db.sqlite3
+*.py[cod]
+*.pyo
+*.pyd
+*.sqlite3
+*.db
+
+# ⚙️ Entorno virtual
+venv/
+env/
+
+# 🔒 Archivos de configuración y secretos
 .env
 *.log
+
+# 🧩 Archivos de Django
+/static/
+media/
+*.pot
+*.mo
+
+# 🧪 Archivos de migraciones compiladas
+*/migrations/__pycache__/
+*/migrations/*.py[cod]
+
+# 💻 IDEs y editores
 .idea/
 .vscode/
+
+# 📦 Node / Frontend
 node_modules/
+dist/
+build/
+
+# 🧹 Otros archivos temporales
+.DS_Store
+Thumbs.db
